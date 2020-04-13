@@ -1,0 +1,26 @@
+appId: io.github.mistgfcs.MistViewer
+copyright: mistgfcs
+productName: MistViewer
+
+asar: true
+
+directories:
+#   buildResources: dist-assets/
+  output: packages/
+
+files:
+  - package.json
+  - index.html
+  - main.js
+  - exif/
+  - dist/
+  - node_modules/
+
+win:
+  target:
+    - nsis
+    - zip
+
+publish:
+  provider: github
+  publishAutoUpdate: true
