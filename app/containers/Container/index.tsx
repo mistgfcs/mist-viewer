@@ -1,6 +1,9 @@
 import React, { useState, useEffect, createRef, useRef } from "react";
 import MovableImage from "../../components/MovableImage";
+import ExifCard from "../../components/ExifCard";
 const { ipcRenderer } = window;
+import { makeStyles, createStyles, Theme } from "@material-ui/core"
+import NameCard from "../../components/NameCard";
 
 const DEFAULT_IMAGE_SIZE_X = 800;
 const DEFAULT_IMAGE_SIZE_Y = DEFAULT_IMAGE_SIZE_X * 2 / 3;
@@ -12,9 +15,33 @@ interface ContainerProps {
     leftPress: boolean,
     expandExif: boolean,
     showFileName: boolean,
+    showExif: boolean,
 }
 
+interface ExifProps {
+    SubjectLocation: { x: number, y: number },
+    ExposureTime: { value: number, numerator: number, denominator: number },
+    ISOSpeedRatings: number,
+    FNumber: { value: number, numerator: number, denominator: number },
+    Flash: string,
+    ExposureProgram: string,
+    FocalLengthIn35mmFilm: number,
+}
+
+const useStyles = makeStyles((theme: Theme) =>
+    createStyles({
+        dropArea: {
+            width: "inherit",
+            height: "inherit",
+            textAlign: "center",
+            cursor: "default",
+        }
+    })
+);
+
 const Container: React.FC<ContainerProps> = (props) => {
+    const classes = useStyles();
+
     const [isExpansion, setExpansion] = useState(false);
     const [pos, setPos] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
     const [startPos, setStartPos] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
@@ -27,6 +54,8 @@ const Container: React.FC<ContainerProps> = (props) => {
 
     const containerRef = useRef<HTMLDivElement>(null);
     const currentImage = useRef<MovableImage>(null);
+
+    const [exif, setExif] = useState<ExifProps>();
 
     const preloadImage: HTMLImageElement[] = [
         document.createElement("img"),
@@ -102,6 +131,13 @@ const Container: React.FC<ContainerProps> = (props) => {
         getImageList(paths).then(result => {
             setImageList(result);
             setShowImageIndex(0);
+            return result;
+        }).then(p => {
+            ipcRenderer.invoke("preload-exif", p);
+            if (props.expandExif) {
+                setXYFromExif(p[0]);
+            }
+            getExif(p[0]);
         });
 
         ipcRenderer.invoke("set-focus");
@@ -111,23 +147,31 @@ const Container: React.FC<ContainerProps> = (props) => {
         e.preventDefault();
     }
 
-    const setXYFromExif = async (index: number) => {
-        if (imageList !== undefined) {
-            const location = await ipcRenderer.invoke("get-exif", imageList[index]);
-            const windowSizeX = containerRef.current?.clientWidth || 0;
-            const windowSizeY = containerRef.current?.clientHeight || 0;
-            const imageSizeX = currentImage.current?.NaturalWidth() || 0;
-            const imageSizeY = currentImage.current?.NaturalHeight() || 0;
-            setPos({
-                x: (-location[0] || -imageSizeX / 2) + windowSizeX / 2,
-                y: (-location[1] || -imageSizeY / 2) + windowSizeY / 2
-            });
-        }
+    const setXYFromExif = async (path: string) => {
+        const location: { x: number | undefined, y: number | undefined } = await ipcRenderer.invoke("get-location", path);
+        const windowSizeX = containerRef.current?.clientWidth || 0;
+        const windowSizeY = containerRef.current?.clientHeight || 0;
+        const imageSizeX = currentImage.current?.NaturalWidth() || 0;
+        const imageSizeY = currentImage.current?.NaturalHeight() || 0;
+        const x = location.x ? location.x : imageSizeX / 2;
+        const y = location.y ? location.y : imageSizeY / 2;
+        setPos({
+            x: -x + windowSizeX / 2,
+            y: -y + windowSizeY / 2
+        });
+    }
+
+    const getExif = async (path: string) => {
+        const e = await ipcRenderer.invoke("get-exif", path)
+        setExif(e);
     }
 
     useEffect(() => {
-        if (props.expandExif) {
-            setXYFromExif(showImageIndex);
+        if (props.expandExif && imageList) {
+            setXYFromExif(imageList[showImageIndex]);
+        }
+        if (props.showExif && imageList) {
+            getExif(imageList[showImageIndex]);
         }
     }, [showImageIndex]);
 
@@ -156,11 +200,17 @@ const Container: React.FC<ContainerProps> = (props) => {
     }, [props.leftPress]);
 
     useEffect(() => {
-        if (props.expandExif) {
-            setXYFromExif(showImageIndex);
+        if (props.expandExif && imageList) {
+            setXYFromExif(imageList[showImageIndex]);
         }
         setExpansion(props.expandExif);
     }, [props.expandExif])
+
+    useEffect(() => {
+        if (props.showExif && imageList) {
+            getExif(imageList[showImageIndex]);
+        }
+    }, [props.showExif])
 
     useEffect(() => {
         if (imageList === undefined) return;
@@ -193,7 +243,7 @@ const Container: React.FC<ContainerProps> = (props) => {
         return (
             <div
                 ref={containerRef}
-                style={{ width: "inherit", height: "inherit", textAlign: "center" }}
+                className={classes.dropArea}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseLeave={handleMouseLeave}
@@ -204,11 +254,20 @@ const Container: React.FC<ContainerProps> = (props) => {
                 onDrop={handleDrop}
             >
                 {props.showFileName ?
-                    <p style={{ position: "absolute" }}>{imageList[showImageIndex]}</p>
+                    <NameCard name={imageList[showImageIndex]}></NameCard>
                     : ""
                 }
                 <MovableImage ref={currentImage} src={imageList[showImageIndex]} isExpansion={isExpansion} x={pos.x} y={pos.y} />
-            </div>
+                {props.showExif && exif !== undefined ?
+                    <ExifCard ExposureTime={exif.ExposureTime}
+                        ISOSpeedRatings={exif.ISOSpeedRatings}
+                        FNumber={exif.FNumber}
+                        Flash={exif.Flash}
+                        ExposureProgram={exif.ExposureProgram}
+                        FocalLengthIn35mmFilm={exif.FocalLengthIn35mmFilm} />
+                    : ""
+                }
+            </div >
         )
     }
 };

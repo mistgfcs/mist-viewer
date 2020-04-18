@@ -11,6 +11,7 @@ const styleGenerator = (isExpansion: boolean, x: number, y: number) =>
         transform: isExpansion ? "translate(" + x + "px, " + y + "px)" : "",
         maxWidth: isExpansion ? "" : "100%",
         maxHeight: isExpansion ? "" : "100%",
+        zIndex: 50,
     })
 
 interface MovableImageProps {

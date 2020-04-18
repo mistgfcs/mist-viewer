@@ -48,6 +48,7 @@ app.on('activate', function () {
 
 let is_expand_from_exif = false;
 let is_show_file_name = false;
+let is_show_exif = false;
 let menu_template = [{
     label: "View",
     submenu: [
@@ -68,6 +69,15 @@ let menu_template = [{
                 win.webContents.send("set-show-file-name", is_show_file_name);
             },
             checked: is_show_file_name,
+        },
+        {
+            label: "Exif情報を表示",
+            type: "checkbox",
+            click: () => {
+                is_show_exif = !is_show_exif;
+                win.webContents.send("set-show-exif", is_show_exif);
+            },
+            checked: is_show_exif,
         },
         { type: 'separator' },
         { role: 'toggledevtools' },
@@ -130,14 +140,40 @@ ipcMain.handle("set-focus", async (_e) => {
     win.focus();
 })
 
-ipcMain.handle("get-exif", async (_e, filename) => {
-    try {
-        const location = await ExifParser.parse(filename);
-        if (location === undefined) {
-            return [undefined, undefined];
+let exifs = {};
+ipcMain.handle("preload-exif", async (_e, paths) => {
+    paths.forEach(async path => {
+        try {
+            const exif = await ExifParser.parse(path);
+            exifs[path] = exif;
+        } catch{
+            return;
         }
-        return [location[0], location[1]];
-    } catch{
-        return [undefined, undefined];
+    });
+})
+
+ipcMain.handle("get-location", async (_e, path) => {
+    if (path in exifs) {
+        return exifs[path].SubjectLocation;
+    } else {
+        try {
+            exifs[path] = await ExifParser.parse(path);
+            return exifs[path].SubjectLocation;
+        } catch {
+            return { x: undefined, y: undefined };
+        }
+    }
+})
+
+ipcMain.handle("get-exif", async (_e, path) => {
+    if (path in exifs) {
+        return exifs[path];
+    } else {
+        try {
+            exifs[path] = await ExifParser.parse(path);
+            return exifs[path];
+        } catch {
+            return undefined;
+        }
     }
 })

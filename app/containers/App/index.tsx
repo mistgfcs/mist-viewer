@@ -31,17 +31,27 @@ const App: React.FC = () => {
     const leftPress = useKeyPress("ArrowLeft");
     const [expandExif, setExpandExif] = useState(false);
     const [showFileName, setShowFileName] = useState(false);
+    const [showExif, setShowExif] = useState(false);
 
-    useEffect(()=>{
+    useEffect(() => {
         ipcRenderer.on("set-expand-exif", (event, arg) => {
             setExpandExif(arg)
         });
-        ipcRenderer.on("set-show-file-name", (event, arg) =>{
+        ipcRenderer.on("set-show-file-name", (event, arg) => {
             setShowFileName(arg);
+        });
+        ipcRenderer.on("set-show-exif", (event, arg) => {
+            setShowExif(arg);
         });
     }, []);
 
-    return <Container rightPress={rightPress} leftPress={leftPress} expandExif={expandExif} showFileName={showFileName} />
+    return <Container
+        rightPress={rightPress}
+        leftPress={leftPress}
+        expandExif={expandExif}
+        showFileName={showFileName}
+        showExif={showExif}
+    />
 };
 
 export default App;

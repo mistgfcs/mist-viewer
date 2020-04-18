@@ -1,6 +1,8 @@
 const fs = require("fs").promises
 const TiffTags = require("./TiffTag").TiffTags
 const ExifTags = require("./ExifTag").ExifTags
+const FlashValue = require("./ExifTag").FlashValue
+const ExposureProgramValue = require("./ExifTag").ExposureProgramValue
 
 async function readFile(path) {
     const buffer = await fs.readFile(path);
@@ -22,16 +24,16 @@ function getString(dataview, start, length) {
 
 function readTags(dataview, tiffStart, dirStart, strings, isLittleEndian, debug) {
     const entries = dataview.getUint16(dirStart, isLittleEndian);
-    if(debug) console.log("entries:", entries)
+    if (debug) console.log("entries:", entries)
     let tags = {};
 
     for (let i = 0; i < entries; i++) {
         let entryOffset = dirStart + i * 12 + 2;
         let tag = strings[dataview.getUint16(entryOffset, isLittleEndian)];
         if (!tag && debug) console.log("Unknown tag: " + dataview.getUint16(entryOffset, isLittleEndian).toString(16));
-        if(tag === "MakerNote"){
+        if (tag === "MakerNote") {
             tags["MakerNotePointer"] = dataview.getUint32(entryOffset + 8, isLittleEndian) + tiffStart;
-        }else{
+        } else {
             tags[tag] = readTagValue(dataview, entryOffset, tiffStart, isLittleEndian);
         }
     }
@@ -89,18 +91,14 @@ function readTagValue(dataview, entryOffset, tiffStart, isLittleEndian) {
             if (numValues == 1) {
                 const numerator = dataview.getUint32(valueOffset, isLittleEndian);
                 const denominator = dataview.getUint32(valueOffset + 4, isLittleEndian);
-                let val = new Number(numerator / denominator);
-                val.numerator = numerator;
-                val.denominator = denominator;
+                let val = { value: numerator / denominator, numerator: numerator, denominator: denominator };
                 return val;
             } else {
                 let vals = [];
                 for (n = 0; n < numValues; n++) {
                     const numerator = dataview.getUint32(valueOffset + 8 * n, isLittleEndian);
                     const denominator = dataview.getUint32(valueOffset + 4 + 8 * n, isLittleEndian);
-                    vals[n] = new Number(numerator / denominator);
-                    vals[n].numerator = numerator;
-                    vals[n].denominator = denominator;
+                    vals[n] = { value: numerator / denominator, numerator: numerator, denominator: denominator };
                 }
                 return vals;
             }
@@ -166,7 +164,17 @@ const parse = async (path) => {
     const IFD0Offset = dv.getUint32(tiffOffset + 4, isLittleEndian);
     let tags = readTags(dv, tiffOffset, tiffOffset + IFD0Offset, TiffTags, isLittleEndian, false);
     exifData = readTags(dv, tiffOffset, tiffOffset + tags.ExifIFDPointer, ExifTags, isLittleEndian, false);
-    return exifData.SubjectLocation;
+    const location = exifData.SubjectLocation
+    const is_exist_location = location !== undefined;
+    return {
+        SubjectLocation: is_exist_location ? { x: location[0], y: location[1] } : { x: undefined, y: undefined },
+        ExposureTime: exifData.ExposureTime,
+        ISOSpeedRatings: exifData.ISOSpeedRatings,
+        FNumber: exifData.FNumber,
+        Flash: FlashValue[exifData.Flash],
+        ExposureProgram: ExposureProgramValue[exifData.ExposureProgram],
+        FocalLengthIn35mmFilm: exifData.FocalLengthIn35mmFilm,
+    };
 }
 
 exports.parse = parse;
