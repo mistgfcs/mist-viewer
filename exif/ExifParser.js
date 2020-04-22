@@ -167,13 +167,16 @@ const parse = async (path) => {
     const location = exifData.SubjectLocation
     const is_exist_location = location !== undefined;
     return {
-        SubjectLocation: is_exist_location ? { x: location[0], y: location[1] } : { x: undefined, y: undefined },
-        ExposureTime: exifData.ExposureTime,
-        ISOSpeedRatings: exifData.ISOSpeedRatings,
-        FNumber: exifData.FNumber,
-        Flash: FlashValue[exifData.Flash],
-        ExposureProgram: ExposureProgramValue[exifData.ExposureProgram],
-        FocalLengthIn35mmFilm: exifData.FocalLengthIn35mmFilm,
+        file_path: path,
+        exif: {
+            SubjectLocation: is_exist_location ? { x: location[0], y: location[1] } : { x: undefined, y: undefined },
+            ExposureTime: exifData.ExposureTime,
+            ISOSpeedRatings: exifData.ISOSpeedRatings,
+            FNumber: exifData.FNumber,
+            Flash: FlashValue[exifData.Flash],
+            ExposureProgram: ExposureProgramValue[exifData.ExposureProgram],
+            FocalLengthIn35mmFilm: exifData.FocalLengthIn35mmFilm,
+        }
     };
 }
 

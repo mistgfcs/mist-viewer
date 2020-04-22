@@ -142,14 +142,15 @@ ipcMain.handle("set-focus", async (_e) => {
 
 let exifs = {};
 ipcMain.handle("preload-exif", async (_e, paths) => {
-    paths.forEach(async path => {
-        try {
-            const exif = await ExifParser.parse(path);
-            exifs[path] = exif;
-        } catch{
-            return;
-        }
-    });
+    let promises = []
+    for (const path of paths) {
+        promises.push(ExifParser.parse(path).catch(err => { if (false) console.log(err) }));
+    }
+    const res = await Promise.all(promises);
+    for (const r of res) {
+        if (!r) continue;
+        exifs[r.file_path] = r.exif;
+    }
 })
 
 ipcMain.handle("get-location", async (_e, path) => {
@@ -157,7 +158,7 @@ ipcMain.handle("get-location", async (_e, path) => {
         return exifs[path].SubjectLocation;
     } else {
         try {
-            exifs[path] = await ExifParser.parse(path);
+            exifs[path] = await (await ExifParser.parse(path)).exif;
             return exifs[path].SubjectLocation;
         } catch {
             return { x: undefined, y: undefined };
@@ -170,7 +171,7 @@ ipcMain.handle("get-exif", async (_e, path) => {
         return exifs[path];
     } else {
         try {
-            exifs[path] = await ExifParser.parse(path);
+            exifs[path] = await (await ExifParser.parse(path)).exif;
             return exifs[path];
         } catch {
             return undefined;

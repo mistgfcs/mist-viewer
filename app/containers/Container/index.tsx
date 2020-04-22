@@ -133,11 +133,12 @@ const Container: React.FC<ContainerProps> = (props) => {
             setShowImageIndex(0);
             return result;
         }).then(p => {
-            ipcRenderer.invoke("preload-exif", p);
+            const promises = [getExif(p[0])]
             if (props.expandExif) {
-                setXYFromExif(p[0]);
+                promises.push(setXYFromExif(p[0]));
             }
-            getExif(p[0]);
+            Promise.all(promises).then(() =>
+                ipcRenderer.invoke("preload-exif", p.slice(1)));
         });
 
         ipcRenderer.invoke("set-focus");
