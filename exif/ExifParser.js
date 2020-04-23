@@ -3,6 +3,7 @@ const TiffTags = require("./TiffTag").TiffTags
 const ExifTags = require("./ExifTag").ExifTags
 const FlashValue = require("./ExifTag").FlashValue
 const ExposureProgramValue = require("./ExifTag").ExposureProgramValue
+const Makernote = require("./MakernoteTag")
 
 async function readFile(path) {
     const buffer = await fs.readFile(path);
@@ -22,7 +23,7 @@ function getString(dataview, start, length) {
     return outstr;
 }
 
-function readTags(dataview, tiffStart, dirStart, strings, isLittleEndian, debug) {
+function readTags(dataview, tiffStart, dirStart, strings, isLittleEndian, debug = false) {
     const entries = dataview.getUint16(dirStart, isLittleEndian);
     if (debug) console.log("entries:", entries)
     let tags = {};
@@ -162,9 +163,16 @@ const parse = async (path) => {
         throw "Invalid Tiff Header";
     }
     const IFD0Offset = dv.getUint32(tiffOffset + 4, isLittleEndian);
-    let tags = readTags(dv, tiffOffset, tiffOffset + IFD0Offset, TiffTags, isLittleEndian, false);
-    exifData = readTags(dv, tiffOffset, tiffOffset + tags.ExifIFDPointer, ExifTags, isLittleEndian, false);
-    const location = exifData.SubjectLocation
+    let tags = readTags(dv, tiffOffset, tiffOffset + IFD0Offset, TiffTags, isLittleEndian);
+    exifData = readTags(dv, tiffOffset, tiffOffset + tags.ExifIFDPointer, ExifTags, isLittleEndian);
+    let location;
+    if (Makernote.IsAvailable()) {
+        const offset = Makernote.ReadOffset();
+        makernote = readTags(dv, tiffOffset, offset + exifData.MakerNotePointer, Makernote.MakernoteTags, isLittleEndian);
+        location = Makernote.SubjectLocation(makernote);
+    } else {
+        location = exifData.SubjectLocation;
+    }
     const is_exist_location = location !== undefined;
     return {
         file_path: path,
