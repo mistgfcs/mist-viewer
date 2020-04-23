@@ -8,7 +8,8 @@ import {
     Table,
     TableRow,
     TableCell,
-    TableBody} from "@material-ui/core";
+    TableBody
+} from "@material-ui/core";
 
 const useStyles = makeStyles((theme: Theme) =>
     createStyles({
@@ -38,14 +39,20 @@ interface ExifProps {
 }
 const ExifCard: React.FC<ExifProps> = (props) => {
     const classes = useStyles();
-    const rows = [
-        { key: "ISO", value: props.ISOSpeedRatings },
-        { key: "SS", value: props.ExposureTime?.numerator + "/" + props.ExposureTime?.denominator },
-        { key: "F値", value: props.FNumber?.value },
-        { key: "AEモード", value: props.ExposureProgram },
-        { key: "Flash", value: props.Flash },
-        { key: "焦点距離", value: props.FocalLengthIn35mmFilm + "mm" },
-    ]
+    const rows = []
+    if (props.ISOSpeedRatings) rows.push({ key: "ISO", value: props.ISOSpeedRatings });
+    if (props.ExposureTime) rows.push({
+        key: "SS",
+        value: (props.ExposureTime.value >= 1 ? props.ExposureTime.value
+            : props.ExposureTime.numerator + "/" + props.ExposureTime.denominator)
+            + " s"
+    });
+    if (props.FNumber) rows.push({ key: "F値", value: props.FNumber.value });
+    if (props.ExposureProgram) rows.push({ key: "AEモード", value: props.ExposureProgram });
+    if (props.Flash) rows.push({ key: "Flash", value: props.Flash });
+    if (props.FocalLengthIn35mmFilm) rows.push({ key: "焦点距離", value: props.FocalLengthIn35mmFilm + "mm" });
+
+    if (rows.length === 0) return <></>;
     return (
         <Card className={classes.card}>
             <CardContent className={classes.content}>
