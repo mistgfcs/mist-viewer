@@ -184,6 +184,7 @@ const parse = async (path) => {
             Flash: FlashValue[exifData.Flash],
             ExposureProgram: ExposureProgramValue[exifData.ExposureProgram],
             FocalLengthIn35mmFilm: exifData.FocalLengthIn35mmFilm,
+            DateTime: exifData.DateTimeOriginal,
         }
     };
 }

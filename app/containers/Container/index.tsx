@@ -30,6 +30,7 @@ interface ExifProps {
     Flash: string,
     ExposureProgram: string,
     FocalLengthIn35mmFilm: number,
+    DateTime: string,
 }
 
 const useStyles = makeStyles((theme: Theme) =>
@@ -293,7 +294,8 @@ const Container: React.FC<ContainerProps> = (props) => {
                             FNumber={exif.FNumber}
                             Flash={exif.Flash}
                             ExposureProgram={exif.ExposureProgram}
-                            FocalLengthIn35mmFilm={exif.FocalLengthIn35mmFilm} />
+                            FocalLengthIn35mmFilm={exif.FocalLengthIn35mmFilm}
+                            DateTime={exif.DateTime} />
                         : ""
                     }
                 </div>

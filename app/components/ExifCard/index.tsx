@@ -36,10 +36,12 @@ interface ExifProps {
     Flash?: string,
     ExposureProgram?: string,
     FocalLengthIn35mmFilm?: number,
+    DateTime?: string,
 }
 const ExifCard: React.FC<ExifProps> = (props) => {
     const classes = useStyles();
     const rows = []
+    if (props.DateTime) rows.push({ key: "撮影日時", value: props.DateTime });
     if (props.ISOSpeedRatings) rows.push({ key: "ISO", value: props.ISOSpeedRatings });
     if (props.ExposureTime) rows.push({
         key: "SS",
@@ -50,7 +52,7 @@ const ExifCard: React.FC<ExifProps> = (props) => {
     if (props.FNumber) rows.push({ key: "F値", value: props.FNumber.value });
     if (props.ExposureProgram) rows.push({ key: "AEモード", value: props.ExposureProgram });
     if (props.Flash) rows.push({ key: "Flash", value: props.Flash });
-    if (props.FocalLengthIn35mmFilm) rows.push({ key: "焦点距離", value: props.FocalLengthIn35mmFilm + "mm" });
+    if (props.FocalLengthIn35mmFilm) rows.push({ key: "35mm焦点距離", value: props.FocalLengthIn35mmFilm + "mm" });
 
     if (rows.length === 0) return <></>;
     return (
