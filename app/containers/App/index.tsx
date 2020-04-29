@@ -32,6 +32,7 @@ const App: React.FC = () => {
     const [expandExif, setExpandExif] = useState(false);
     const [showFileName, setShowFileName] = useState(false);
     const [showExif, setShowExif] = useState(false);
+    const [showImageListButton, setShowImageListButton] = useState(true);
 
     useEffect(() => {
         ipcRenderer.on("set-expand-exif", (event, arg) => {
@@ -43,6 +44,9 @@ const App: React.FC = () => {
         ipcRenderer.on("set-show-exif", (event, arg) => {
             setShowExif(arg);
         });
+        ipcRenderer.on("set-image-list-button", (event, arg) => {
+            setShowImageListButton(arg);
+        });
     }, []);
 
     return <Container
@@ -51,6 +55,7 @@ const App: React.FC = () => {
         expandExif={expandExif}
         showFileName={showFileName}
         showExif={showExif}
+        showImageListButton={showImageListButton}
     />
 };
 

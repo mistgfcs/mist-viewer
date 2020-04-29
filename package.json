@@ -1,6 +1,6 @@
 {
   "name": "mist-viewer",
-  "version": "0.10.2",
+  "version": "0.11.0",
   "description": "",
   "main": "main.js",
   "scripts": {
@@ -15,12 +15,15 @@
   "dependencies": {
     "@material-ui/core": "^4.9.10",
     "@material-ui/icons": "^4.9.1",
+    "clsx": "^1.1.0",
     "react": "^16.13.1",
-    "react-dom": "^16.13.1"
+    "react-dom": "^16.13.1",
+    "react-window": "^1.8.5"
   },
   "devDependencies": {
     "@types/react": "^16.9.25",
     "@types/react-dom": "^16.9.5",
+    "@types/react-window": "^1.8.2",
     "css-loader": "^3.4.2",
     "electron": "^8.1.1",
     "electron-builder": "^22.4.1",

@@ -11,8 +11,10 @@ const ExifParser = require("./exif/ExifParser")
 let win;
 function createWindow() {
     win = new BrowserWindow({
-        width: 800,
+        width: 900,
         height: 600,
+        minWidth: 900,
+        minHeight: 600,
         useContentSize: true,
         webPreferences: {
             nodeIntegration: false,
@@ -49,9 +51,19 @@ app.on('activate', function () {
 let is_expand_from_exif = false;
 let is_show_file_name = false;
 let is_show_exif = false;
+let is_show_image_list_button = true;
 let menu_template = [{
     label: "View",
     submenu: [
+        {
+            label: "画像リストボタンを表示する",
+            type: "checkbox",
+            click: () => {
+                is_show_image_list_button = !is_show_image_list_button;
+                win.webContents.send("set-image-list-button", is_show_image_list_button);
+            },
+            checked: is_show_image_list_button,
+        },
         {
             label: "被写体位置で拡大",
             type: "checkbox",

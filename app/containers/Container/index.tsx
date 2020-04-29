@@ -2,8 +2,11 @@ import React, { useState, useEffect, createRef, useRef } from "react";
 import MovableImage from "../../components/MovableImage";
 import ExifCard from "../../components/ExifCard";
 const { ipcRenderer } = window;
-import { makeStyles, createStyles, Theme } from "@material-ui/core"
+import { makeStyles, createStyles, Theme, IconButton, Icon, Drawer, Tooltip } from "@material-ui/core"
 import NameCard from "../../components/NameCard";
+import PhotoLibraryIcon from "@material-ui/icons/PhotoLibrary";
+import { FixedSizeList, FixedSizeGrid } from "react-window";
+import clsx from "clsx";
 
 const DEFAULT_IMAGE_SIZE_X = 800;
 const DEFAULT_IMAGE_SIZE_Y = DEFAULT_IMAGE_SIZE_X * 2 / 3;
@@ -16,6 +19,7 @@ interface ContainerProps {
     expandExif: boolean,
     showFileName: boolean,
     showExif: boolean,
+    showImageListButton: boolean,
 }
 
 interface ExifProps {
@@ -35,6 +39,25 @@ const useStyles = makeStyles((theme: Theme) =>
             height: "inherit",
             textAlign: "center",
             cursor: "default",
+        },
+        openImageList: {
+            position: "absolute",
+            left: "10px",
+            bottom: "10px",
+        },
+        drawer: {
+            width: "100%",
+            minWidth: "600px",
+        },
+        list: {
+            width: "auto",
+            minWidth: "600px",
+        },
+        selectedImgBase: {
+            backgroundColor: "black",
+        },
+        selectedImg: {
+            opacity: 0.6,
         }
     })
 );
@@ -54,8 +77,11 @@ const Container: React.FC<ContainerProps> = (props) => {
 
     const containerRef = useRef<HTMLDivElement>(null);
     const currentImage = useRef<MovableImage>(null);
+    const imageListRef = useRef<FixedSizeGrid>(null);
 
     const [exif, setExif] = useState<ExifProps>();
+
+    const [openImageList, setOpenImageList] = useState(false);
 
     const preloadImage: HTMLImageElement[] = [
         document.createElement("img"),
@@ -229,6 +255,7 @@ const Container: React.FC<ContainerProps> = (props) => {
         preloadImage[3].src = imageList[backwardIndex];
     }, [showImageIndex]);
 
+
     if (imageList === undefined) {
         return (
             <div
@@ -242,33 +269,71 @@ const Container: React.FC<ContainerProps> = (props) => {
         )
     } else {
         return (
-            <div
-                ref={containerRef}
-                className={classes.dropArea}
-                onMouseDown={handleMouseDown}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                onMouseUp={handleMouseUp}
-                onDragOver={handlePreventDefault}
-                onDragLeave={handlePreventDefault}
-                onDragEnd={handlePreventDefault}
-                onDrop={handleDrop}
-            >
-                {props.showFileName ?
-                    <NameCard name={imageList[showImageIndex]}></NameCard>
+            <>
+                <div
+                    ref={containerRef}
+                    className={classes.dropArea}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseLeave={handleMouseLeave}
+                    onMouseUp={handleMouseUp}
+                    onDragOver={handlePreventDefault}
+                    onDragLeave={handlePreventDefault}
+                    onDragEnd={handlePreventDefault}
+                    onDrop={handleDrop}
+                >
+                    {props.showFileName ?
+                        <NameCard name={imageList[showImageIndex]}></NameCard>
+                        : ""
+                    }
+                    <MovableImage ref={currentImage} src={imageList[showImageIndex]} isExpansion={isExpansion} x={pos.x} y={pos.y} />
+                    {props.showExif && exif !== undefined ?
+                        <ExifCard ExposureTime={exif.ExposureTime}
+                            ISOSpeedRatings={exif.ISOSpeedRatings}
+                            FNumber={exif.FNumber}
+                            Flash={exif.Flash}
+                            ExposureProgram={exif.ExposureProgram}
+                            FocalLengthIn35mmFilm={exif.FocalLengthIn35mmFilm} />
+                        : ""
+                    }
+                </div>
+                {props.showImageListButton ?
+                    <IconButton className={classes.openImageList} color="primary" onClick={() => {
+                        setOpenImageList(true);
+                    }} aria-label="open-image-list">
+                        <PhotoLibraryIcon />
+                    </IconButton>
                     : ""
                 }
-                <MovableImage ref={currentImage} src={imageList[showImageIndex]} isExpansion={isExpansion} x={pos.x} y={pos.y} />
-                {props.showExif && exif !== undefined ?
-                    <ExifCard ExposureTime={exif.ExposureTime}
-                        ISOSpeedRatings={exif.ISOSpeedRatings}
-                        FNumber={exif.FNumber}
-                        Flash={exif.Flash}
-                        ExposureProgram={exif.ExposureProgram}
-                        FocalLengthIn35mmFilm={exif.FocalLengthIn35mmFilm} />
-                    : ""
-                }
-            </div >
+                <Drawer className={classes.drawer}
+                    anchor="right"
+                    open={openImageList}
+                    onRendered={() => imageListRef.current?.scrollToItem({ align: "center", rowIndex: Math.ceil(showImageIndex / 3), columnIndex: 0 })}
+                    onClose={() => setOpenImageList(false)}>
+                    <div className={classes.list} role="presentation" onClick={() => setOpenImageList(false)}>
+                        <FixedSizeGrid
+                            width={620}
+                            height={containerRef.current?.clientHeight || 500}
+                            columnCount={3}
+                            columnWidth={200}
+                            rowCount={Math.ceil(imageList.length / 3)}
+                            rowHeight={200}
+                            ref={imageListRef}
+                        >
+                            {({ columnIndex, rowIndex, style }) => (
+                                <Tooltip title={imageList[columnIndex + rowIndex * 3]}>
+                                    <div className={clsx(columnIndex + rowIndex * 3 === showImageIndex && classes.selectedImgBase)}>
+                                        <img className={clsx(columnIndex + rowIndex * 3 === showImageIndex && classes.selectedImg)}
+                                            src={imageList[columnIndex + rowIndex * 3]}
+                                            style={style}
+                                            onClick={() => setShowImageIndex(columnIndex + rowIndex * 3)} />
+                                    </div>
+                                </Tooltip>
+                            )}
+                        </FixedSizeGrid>
+                    </div>
+                </Drawer>
+            </>
         )
     }
 };

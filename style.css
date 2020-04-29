@@ -1,6 +1,6 @@
-::-webkit-scrollbar {
+/* ::-webkit-scrollbar {
   display: none;
-}
+} */
 
 html {
   height: 100%;
@@ -17,4 +17,10 @@ body {
 
 #root {
   height: 100%;
+}
+
+.MuiDrawer-paper {
+  width: 620px; /* スクロールバー20px, drawer600px */
+  overflow-y: scroll;
+  overflow-x: hidden;
 }
