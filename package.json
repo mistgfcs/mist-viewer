@@ -5,6 +5,7 @@
   "main": "main.js",
   "scripts": {
     "build": "webpack",
+    "build:release": "webpack --mode production",
     "start": "electron ./",
     "release": "electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1"

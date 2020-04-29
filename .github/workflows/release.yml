@@ -15,7 +15,7 @@ jobs:
       - name: npm install
         run: npm install
       - name: run build
-        run: npm run build
+        run: npm run build:release
       - name: do package
         run: |
           npm run release
